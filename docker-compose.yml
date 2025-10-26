@@ -1,0 +1,7 @@
+services:
+  todo-app:
+    container_name: simple-todo-app
+    build: .
+    ports:
+      - "8081:80"
+    restart: unless-stopped
