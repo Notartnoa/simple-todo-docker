@@ -1,105 +1,44 @@
 pipeline {
     agent any
-
+    
     environment {
-        APP_NAME = "go-app-fiber"
-        DOCKER_IMAGE = "wizzidevs/go-app-fiber"
-        DOCKER_TAG = "latest"
-        DOCKER_CREDENTIALS = "dockerhub-credentials"
-        GO_VERSION = "1.25.1"
+        DOCKER_IMAGE = 'simple-todo-app'
+        CONTAINER_NAME = 'simple-todo-app'
     }
-
-    options {
-        timestamps()
-    }
-
+    
     stages {
-        stage('Checkout') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Checking out source code......'
-                checkout scm
+                script {
+                    bat 'docker build -t %DOCKER_IMAGE% .'
+                }
             }
         }
-
-        stage('Build & Test (Go)') {
+        
+        stage('Stop Old Container') {
             steps {
-                echo "Building with Go ${GO_VERSION}..."
-                sh '''
-                    docker run --rm \
-                        -v "$(pwd):/app" \
-                        -w /app \
-                        -e GOCACHE=/tmp/go-cache \
-                        -e GOMODCACHE=/tmp/go-mod \
-                        golang:${GO_VERSION} \
-                        sh -c "
-                            go version
-                            go mod download
-                            go mod tidy
-                            go build -o main .
-                            echo 'Build Done'
-
-                            echo 'Running unit tests...'
-                            go test ./... -v || echo ' No tests found'
-                        "
-                '''
+                script {
+                    bat 'docker stop %CONTAINER_NAME% 2>nul || echo No container to stop'
+                    bat 'docker rm %CONTAINER_NAME% 2>nul || echo No container to remove'
+                }
             }
         }
-
-        stage('Docker Build & Test') {
+        
+        stage('Run New Container') {
             steps {
-                echo ' Building Docker image for integration test...'
-                sh '''
-                    docker build -t ${DOCKER_IMAGE}:test .
-
-                    # Cleanup existing test container if exists
-                    docker rm -f ${APP_NAME}_test 2>/dev/null || true
-
-                    # Run container test
-                    docker run -d --rm -p 9000:8000 --name ${APP_NAME}_test ${DOCKER_IMAGE}:test
-                    sleep 5
-
-                    # Health check
-                    curl -f http://localhost:9000 || (echo "Container test failed!" && docker logs ${APP_NAME}_test && exit 1)
-
-                    docker stop ${APP_NAME}_test
-                    echo "Container test OK"
-                '''
-            }
-        }
-
-        stage('Push to Docker Hub') {
-            steps {
-                echo 'Pushing image to Docker Hub...'
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh '''
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
-                        docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
-                        docker logout
-                    '''
+                script {
+                    bat 'docker run -d -p 8081:80 --name %CONTAINER_NAME% %DOCKER_IMAGE%'
                 }
             }
         }
     }
-
+    
     post {
-        always {
-            echo 'Cleaning up...'
-            script {
-                // Cleanup containers
-                sh 'docker rm -f ${APP_NAME}_final>/dev/null || true'
-
-                // Cleanup images
-                if (sh(script: 'which docker', returnStatus: true) == 0) {
-                    sh 'docker system prune -f || true'
-                }
-            }
-        }
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'Deployment successful!'
         }
         failure {
-            echo 'Pipeline failed. Check logs above.'
+            echo 'Deployment failed!'
         }
     }
 }
