@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        DOCKERHUB_USERNAME = 'username-dockerhub-kamu'
+        DOCKERHUB_USERNAME = 'Kharis Pradana'
         IMAGE_NAME = 'simple-todo-app'
         IMAGE_TAG = 'latest'
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
