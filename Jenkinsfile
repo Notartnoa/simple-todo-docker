@@ -5,7 +5,7 @@ pipeline {
         DOCKERHUB_USERNAME = 'kharis pradana'
         IMAGE_NAME = 'simple-todo-app'
         IMAGE_TAG = 'latest'
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        DOCKER_CREDENTIALS = "dockerhub-credentials"
     }
     
     stages {
