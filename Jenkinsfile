@@ -2,32 +2,41 @@ pipeline {
     agent any
     
     environment {
-        DOCKER_IMAGE = 'simple-todo-app'
-        CONTAINER_NAME = 'simple-todo-app'
+        DOCKERHUB_USERNAME = 'kharis pradana'
+        IMAGE_NAME = 'simple-todo-app'
+        IMAGE_TAG = 'latest'
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
     }
     
     stages {
         stage('Build Docker Image') {
             steps {
                 script {
-                    bat 'docker build -t %DOCKER_IMAGE% .'
+                    bat "docker build -t %DOCKERHUB_USERNAME%/%IMAGE_NAME%:%IMAGE_TAG% ."
                 }
             }
         }
         
-        stage('Stop Old Container') {
+        stage('Login to Docker Hub') {
             steps {
                 script {
-                    bat 'docker stop %CONTAINER_NAME% 2>nul || echo No container to stop'
-                    bat 'docker rm %CONTAINER_NAME% 2>nul || echo No container to remove'
+                    bat "docker login -u %DOCKERHUB_USERNAME% -p %DOCKERHUB_CREDENTIALS_PSW%"
                 }
             }
         }
         
-        stage('Run New Container') {
+        stage('Push to Docker Hub') {
             steps {
                 script {
-                    bat 'docker run -d -p 8081:80 --name %CONTAINER_NAME% %DOCKER_IMAGE%'
+                    bat "docker push %DOCKERHUB_USERNAME%/%IMAGE_NAME%:%IMAGE_TAG%"
+                }
+            }
+        }
+        
+        stage('Cleanup') {
+            steps {
+                script {
+                    bat "docker logout"
                 }
             }
         }
@@ -35,10 +44,10 @@ pipeline {
     
     post {
         success {
-            echo 'Deployment successful!'
+            echo 'Image successfully pushed to Docker Hub!'
         }
         failure {
-            echo 'Deployment failed!'
+            echo 'Build or push failed!'
         }
     }
 }
