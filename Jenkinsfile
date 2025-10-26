@@ -2,10 +2,10 @@ pipeline {
     agent any
     
     environment {
-        DOCKERHUB_USERNAME = 'kharis pradana'
+        DOCKERHUB_USERNAME = 'username-dockerhub-kamu'
         IMAGE_NAME = 'simple-todo-app'
         IMAGE_TAG = 'latest'
-        DOCKER_CREDENTIALS = "dockerhub-credentials"
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
     }
     
     stages {
