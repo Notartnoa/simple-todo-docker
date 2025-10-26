@@ -4,17 +4,9 @@ pipeline {
     environment {
         DOCKER_IMAGE = 'simple-todo-app'
         CONTAINER_NAME = 'simple-todo-app'
-        DOCKER_CREDENTIALS = 'dockerhub-credentials'
     }
     
     stages {
-        stage('Clone Repository') {
-            steps {
-                git branch: 'main', 
-                    url: 'https://github.com/USERNAME/REPO-NAME.git'
-            }
-        }
-        
         stage('Build Docker Image') {
             steps {
                 script {
@@ -26,10 +18,8 @@ pipeline {
         stage('Stop Old Container') {
             steps {
                 script {
-                    bat '''
-                        docker stop %CONTAINER_NAME% || echo "No container to stop"
-                        docker rm %CONTAINER_NAME% || echo "No container to remove"
-                    '''
+                    bat 'docker stop %CONTAINER_NAME% 2>nul || echo No container to stop'
+                    bat 'docker rm %CONTAINER_NAME% 2>nul || echo No container to remove'
                 }
             }
         }
